@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0")]
-#[command(about = "command line interface for a key-value store", long_about = None)]
+#[command(about = "kvs: a cli-based key-value store", long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Commands,
