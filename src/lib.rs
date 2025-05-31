@@ -5,7 +5,7 @@ impl KvStore {
         KvStore {}
     }
 
-    pub fn get(&self, key: String) -> Option<String> {
+    pub fn get(&self, _key: String) -> Option<String> {
         None
     }
 
