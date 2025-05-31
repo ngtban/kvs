@@ -5,7 +5,7 @@ use clap::{Parser, Subcommand};
 #[command(about, long_about = None)]
 struct Args {
     #[command(subcommand)]
-    command: Option<Commands>
+    command: Commands
 }
 
 #[derive(Subcommand, Debug)]
@@ -19,9 +19,8 @@ fn main() {
     let args = Args::parse();
 
     match args.command {
-        Some(Commands::Get { key: _key }) => { panic!("unimplemented") },
-        Some(Commands::Set { key: _key, value: _value }) => { panic!("unimplemented") },
-        Some(Commands::Rm { key: _key }) => { panic!("unimplemented") },
-        None => { println!("no subcommand given") },
+        Commands::Get { key: _key } => { panic!("unimplemented") },
+        Commands::Set { key: _key, value: _value } => { panic!("unimplemented") },
+        Commands::Rm { key: _key } => { panic!("unimplemented") }
     }
 }
