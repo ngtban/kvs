@@ -1,0 +1,1 @@
+This repository is my implementation of the `kvs` key-value store, which is the subject of the ["Practical Networked Applications" course under PingCap's Talent Plan](https://github.com/pingcap/talent-plan/tree/master/courses/rust).
