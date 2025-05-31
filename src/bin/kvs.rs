@@ -2,7 +2,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0")]
-#[command(about, long_about = None)]
+#[command(about = "command line interface for a key-value store", long_about = None)]
 struct Args {
     #[command(subcommand)]
     command: Commands,
@@ -10,9 +10,23 @@ struct Args {
 
 #[derive(Subcommand, Debug)]
 enum Commands {
-    Get { key: String },
-    Set { key: String, value: String },
-    Rm { key: String },
+    #[command(about = "get a string value by key")]
+    Get {
+        #[arg(help = "the key to get value for")]
+        key: String,
+    },
+    #[command(about = "set a string value under the given key")]
+    Set {
+        #[arg(help = "the key to set value for")]
+        key: String,
+        #[arg(help = "the value to set to")]
+        value: String,
+    },
+    #[command(about = "remove a string value by key")]
+    Rm {
+        #[arg(help = "the key to remove value for")]
+        key: String,
+    },
 }
 
 fn main() {
