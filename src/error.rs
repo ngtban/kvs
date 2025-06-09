@@ -9,7 +9,7 @@ pub enum KvsError {
     Io(#[from] io::Error),
     /// Serialization failure from serde
     #[error("{0}")]
-    Serialization(#[from] serde_json::Error),
+    Serialization(#[from] apache_avro::Error),
     /// Error for when no key matching what the user gave exists
     #[error("key not found")]
     KeyNotFound,
