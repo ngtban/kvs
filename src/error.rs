@@ -7,15 +7,21 @@ pub enum KvsError {
     /// IO failure when opening command log file
     #[error("{0}")]
     Io(#[from] io::Error),
-    /// Serialization failure from serde
+    /// Decoding failure from bincode
     #[error("{0}")]
-    Serialization(#[from] apache_avro::Error),
+    Decode(#[from] bincode::error::DecodeError),
+    /// Encoding failure from bincode
+    #[error("{0}")]
+    Encode(#[from] bincode::error::EncodeError),
     /// Error for when no key matching what the user gave exists
     #[error("key not found")]
     KeyNotFound,
     /// Error when the user attempts to execute an unknown command
     #[error("unknown command type")]
     UnknownCommand,
+    #[error("unexpected command")]
+    /// Error when retrieving a value from the log and the command we found is not a Set command
+    UnexpectedCommand,
 }
 
 /// Shorthand for result types used by all functions in the library

@@ -1,4 +1,6 @@
-use clap::{Parser, Subcommand};
+use clap::Parser;
+use kvs::Commands;
+// use kvs::KvStore;
 
 #[derive(Parser, Debug)]
 #[command(version = "0.1.0")]
@@ -8,41 +10,19 @@ struct Args {
     command: Commands,
 }
 
-#[derive(Subcommand, Debug)]
-enum Commands {
-    #[command(about = "get a string value by key")]
-    Get {
-        #[arg(help = "the key to get value for")]
-        key: String,
-    },
-    #[command(about = "set a string value under the given key")]
-    Set {
-        #[arg(help = "the key to set value for")]
-        key: String,
-        #[arg(help = "the value to set to")]
-        value: String,
-    },
-    #[command(about = "remove a string value by key")]
-    Rm {
-        #[arg(help = "the key to remove value for")]
-        key: String,
-    },
-}
-
 fn main() {
     let args = Args::parse();
 
+    // let mut store = KvStore::open("command_log.rkyv");
+
     match args.command {
-        Commands::Get { key: _key } => {
+        Commands::Get { .. } => {
             panic!("unimplemented")
         }
-        Commands::Set {
-            key: _key,
-            value: _value,
-        } => {
+        Commands::Set { .. } => {
             panic!("unimplemented")
         }
-        Commands::Rm { key: _key } => {
+        Commands::Rm { .. } => {
             panic!("unimplemented")
         }
     }

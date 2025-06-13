@@ -1,63 +1,131 @@
 use crate::Result;
+use crate::{Commands, KvsError};
+
+use bincode::config::Configuration;
+use bincode::decode_from_std_read;
+use bincode::{config, encode_into_std_write};
 use std::collections::HashMap;
-use std::path::Path;
+use std::fs;
+use std::fs::File;
+use std::io::SeekFrom::Start;
+use std::io::{BufReader, BufWriter, Seek};
+use std::path::PathBuf;
 
 /// Struct holding stored key-value pairs.
 /// Both keys and values are of `String` type.
-/// Currently key-value pairs are stored in memory using a hash map.
+/// Currently, key-value pairs are stored in memory using a hash map.
 ///
 /// Usage:
 ///
 /// ```rust
 /// use kvs::KvStore;
 ///
-/// let mut store = KvStore::new();
+/// let mut store = KvStore::open("log.avro");
 ///
-/// let set_result = store.set("hello".to_owned(), "world".to_owned());
+/// store.set("hello".to_owned(), "world".to_owned())?;
 ///
 /// let value = store.get("hello".to_owned())?;
 ///
 /// assert_eq!(value, Some("world".to_owned()));
 /// ```
-#[derive(Default)]
 pub struct KvStore {
-    inner: HashMap<String, String>,
+    log_path: PathBuf,
+    index: HashMap<String, u64>,
+    bincode_config: Configuration,
+    current_offset: u64,
 }
 
 /// Key-value store
 impl KvStore {
-    /// Creates a new key-value store
-    pub fn new() -> Self {
-        KvStore {
-            inner: HashMap::new(),
-        }
-    }
-
     /// Gets a value corresponding to a string key
     pub fn get(&self, key: String) -> Result<Option<String>> {
-        if let Some(value) = self.inner.get(&key) {
-            Ok(Some(value.to_owned()))
-        } else {
-            Ok(None)
+        if let Some(&offset) = self.index.get(&key) {
+            let log_file = File::open(&self.log_path)?;
+            let mut buf_reader = BufReader::new(log_file);
+
+            buf_reader.seek(Start(offset))?;
+
+            let command: Commands =
+                decode_from_std_read(&mut buf_reader, self.bincode_config.clone())?;
+
+            return match command {
+                Commands::Set { value, .. } => Ok(Some(value)),
+                _ => Err(KvsError::UnexpectedCommand),
+            };
         }
+
+        Ok(None)
     }
 
     /// Sets a value under a string key
     pub fn set(&mut self, key: String, value: String) -> Result<()> {
-        self.inner.insert(key, value);
+        let log_file = File::open(&self.log_path)?;
+        let mut buf_writer = BufWriter::new(log_file);
+        buf_writer.seek(Start(self.current_offset))?;
+
+        let command = Commands::Set {
+            key: key.clone(),
+            value: value.clone(),
+        };
+
+        let bytes_written =
+            encode_into_std_write(command, &mut buf_writer, self.bincode_config)? as u64;
+
+        self.index.insert(key, bytes_written);
+        self.current_offset += bytes_written;
 
         Ok(())
     }
 
     /// Removes a value under a string key
     pub fn remove(&mut self, key: String) -> Result<()> {
-        self.inner.remove(&key);
+        let log_file = File::open(&self.log_path)?;
+        let mut buf_writer = BufWriter::new(log_file);
+        buf_writer.seek(Start(self.current_offset))?;
+
+        let command = Commands::Rm { key: key.clone() };
+
+        let bytes_written =
+            encode_into_std_write(command, &mut buf_writer, self.bincode_config)? as u64;
+
+        self.index.insert(key, self.current_offset + bytes_written);
+        self.current_offset += bytes_written;
 
         Ok(())
     }
 
-    /// Use a file to store command history
-    pub fn open(_path: &Path) -> Result<Self> {
-        Ok(Self::default())
+    /// Create a new store with command log file at given path
+    pub fn open<Path: Into<PathBuf>>(path: Path) -> Result<Self> {
+        let path = path.into();
+
+        let bincode_config = config::standard();
+        bincode_config.with_big_endian().with_fixed_int_encoding();
+
+        let mut store = KvStore {
+            log_path: path,
+            index: HashMap::new(),
+            bincode_config,
+            current_offset: 0,
+        };
+
+        fs::create_dir_all(&store.log_path)?;
+        let file = File::open(&store.log_path)?;
+        let mut buf_reader = BufReader::new(file);
+
+        while let Ok(command) = decode_from_std_read(&mut buf_reader, store.bincode_config) {
+            match command {
+                Commands::Set { key, .. } => {
+                    store.index.insert(key, store.current_offset);
+                }
+                Commands::Rm { key } => {
+                    store.index.remove(&key);
+                }
+                _ => (),
+            }
+
+            store.current_offset = buf_reader.stream_position()?;
+        }
+
+        Ok(store)
     }
 }
