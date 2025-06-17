@@ -26,12 +26,12 @@ fn main() -> Result<()> {
     match args.command {
         Commands::Get { key } => match store.get(key) {
             Ok(Some(value)) => {
-                println!("{}", value);
+                print!("{}", value);
                 Ok(())
             }
             Ok(None) => {
-                println!("Key not found");
-                process::exit(1);
+                print!("Key not found");
+                Ok(())
             }
             Err(e) => Err(e),
         },
@@ -42,7 +42,7 @@ fn main() -> Result<()> {
         Commands::Rm { key } => match store.remove(key) {
             Ok(_) => Ok(()),
             Err(KvsError::KeyNotFound) => {
-                println!("Key not found");
+                print!("Key not found");
                 process::exit(1);
             }
             Err(e) => Err(e),

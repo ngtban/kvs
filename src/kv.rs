@@ -69,7 +69,7 @@ impl KvStore {
 
         buf_writer.flush()?;
 
-        self.index.insert(key, bytes_written);
+        self.index.insert(key, self.current_offset);
         self.current_offset += bytes_written;
 
         Ok(())
@@ -88,7 +88,7 @@ impl KvStore {
 
             buf_writer.flush()?;
 
-            self.index.insert(key, self.current_offset + bytes_written);
+            self.index.remove(&key);
             self.current_offset += bytes_written;
 
             return Ok(());
